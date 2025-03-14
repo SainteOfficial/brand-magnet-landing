@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -103,11 +102,10 @@ interface NavLinksProps {
 
 const NavLinks = ({ mobile, setIsMobileMenuOpen }: NavLinksProps) => {
   const navItems = [
-    { name: 'About', href: '#about' },
-    { name: 'Services', href: '#services' },
-    { name: 'Testimonials', href: '#testimonials' },
-    { name: 'Contact', href: '#contact' },
-    { name: 'Qualification', href: '#qualification' }, 
+    { name: 'Über uns', href: '#about' },
+    { name: 'Leistungen', href: '#services' },
+    { name: 'Referenzen', href: '#testimonials' },
+    { name: 'Qualifikation', href: '#qualification' },
   ];
 
   const handleClick = (href: string) => {
