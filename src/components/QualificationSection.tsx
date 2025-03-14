@@ -11,7 +11,8 @@ import {
   LucideIcon, 
   Users, 
   Trophy, 
-  Target 
+  Target,
+  Sparkles 
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from "@/lib/utils";
@@ -36,91 +37,92 @@ const QualificationSection = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isComplete, setIsComplete] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const sectionRef = useRef<HTMLElement>(null);
   const { toast } = useToast();
 
   const steps: StepData[] = [
     {
-      title: "Personal Information",
-      subtitle: "Tell us about yourself",
+      title: "Persönliche Informationen",
+      subtitle: "Erzählen Sie uns über sich",
       icon: Users,
       questions: [
         {
           id: "name",
-          question: "What is your name?",
+          question: "Wie ist Ihr Name?",
           type: "input"
         },
         {
           id: "email",
-          question: "What is your email address?",
+          question: "Wie lautet Ihre E-Mail-Adresse?",
           type: "input"
         },
         {
           id: "experience",
-          question: "How many years of professional experience do you have?",
+          question: "Wie viele Jahre Berufserfahrung haben Sie?",
           options: [
-            { value: "0-2", label: "0-2 years" },
-            { value: "3-5", label: "3-5 years" },
-            { value: "6-10", label: "6-10 years" },
-            { value: "10+", label: "10+ years" }
+            { value: "0-2", label: "0-2 Jahre" },
+            { value: "3-5", label: "3-5 Jahre" },
+            { value: "6-10", label: "6-10 Jahre" },
+            { value: "10+", label: "Mehr als 10 Jahre" }
           ],
           type: "radio"
         }
       ]
     },
     {
-      title: "Current Status",
-      subtitle: "Your career situation",
+      title: "Aktuelle Situation",
+      subtitle: "Ihre berufliche Situation",
       icon: Target,
       questions: [
         {
           id: "employment",
-          question: "What is your current employment status?",
+          question: "Was ist Ihr aktueller Beschäftigungsstatus?",
           options: [
-            { value: "employed", label: "Employed full-time" },
-            { value: "part-time", label: "Employed part-time" },
-            { value: "freelance", label: "Freelancer/Self-employed" },
-            { value: "unemployed", label: "Looking for opportunities" }
+            { value: "employed", label: "Vollzeit beschäftigt" },
+            { value: "part-time", label: "Teilzeit beschäftigt" },
+            { value: "freelance", label: "Freiberufler/Selbstständig" },
+            { value: "unemployed", label: "Auf der Suche nach Möglichkeiten" }
           ],
           type: "radio"
         },
         {
           id: "social_presence",
-          question: "How would you rate your current social media presence?",
+          question: "Wie würden Sie Ihre aktuelle Social-Media-Präsenz bewerten?",
           options: [
-            { value: "none", label: "No presence" },
-            { value: "basic", label: "Basic profiles but inactive" },
-            { value: "active", label: "Active but not strategic" },
-            { value: "strategic", label: "Strategic and well-maintained" }
+            { value: "none", label: "Keine Präsenz" },
+            { value: "basic", label: "Grundlegende Profile, aber inaktiv" },
+            { value: "active", label: "Aktiv, aber nicht strategisch" },
+            { value: "strategic", label: "Strategisch und gut gepflegt" }
           ],
           type: "radio"
         }
       ]
     },
     {
-      title: "Goals & Objectives",
-      subtitle: "What you want to achieve",
+      title: "Ziele & Ambitionen",
+      subtitle: "Was Sie erreichen möchten",
       icon: Trophy,
       questions: [
         {
           id: "primary_goal",
-          question: "What is your primary goal with personal branding?",
+          question: "Was ist Ihr Hauptziel beim Personal Branding?",
           options: [
-            { value: "job_opportunities", label: "Better job opportunities" },
-            { value: "visibility", label: "Industry recognition" },
-            { value: "networking", label: "Expanded professional network" },
-            { value: "business", label: "Growing my business" }
+            { value: "job_opportunities", label: "Bessere Karrieremöglichkeiten" },
+            { value: "visibility", label: "Anerkennung in der Branche" },
+            { value: "networking", label: "Erweitertes berufliches Netzwerk" },
+            { value: "business", label: "Wachstum meines Unternehmens" }
           ],
           type: "radio"
         },
         {
           id: "timeline",
-          question: "What is your timeline for achieving results?",
+          question: "Welchen Zeitrahmen haben Sie für die Erreichung von Ergebnissen?",
           options: [
-            { value: "immediate", label: "As soon as possible" },
-            { value: "3months", label: "Within 3 months" },
-            { value: "6months", label: "Within 6 months" },
-            { value: "1year", label: "Within a year" }
+            { value: "immediate", label: "So schnell wie möglich" },
+            { value: "3months", label: "Innerhalb von 3 Monaten" },
+            { value: "6months", label: "Innerhalb von 6 Monaten" },
+            { value: "1year", label: "Innerhalb eines Jahres" }
           ],
           type: "radio"
         }
@@ -144,14 +146,23 @@ const QualificationSection = () => {
     if (currentSection) {
       const animatedElements = currentSection.querySelectorAll('.animate-on-scroll');
       animatedElements.forEach((el) => observer.observe(el));
-    }
-
-    return () => {
-      if (currentSection) {
+      
+      const handleMouseMove = (e: MouseEvent) => {
+        const rect = currentSection.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 20;
+        const y = ((e.clientY - rect.top) / rect.height - 0.5) * 20;
+        
+        setMousePosition({ x, y });
+      };
+      
+      currentSection.addEventListener('mousemove', handleMouseMove);
+      
+      return () => {
         const animatedElements = currentSection.querySelectorAll('.animate-on-scroll');
         animatedElements.forEach((el) => observer.unobserve(el));
-      }
-    };
+        currentSection.removeEventListener('mousemove', handleMouseMove);
+      };
+    }
   }, []);
 
   const handleInputChange = (id: string, value: string) => {
@@ -173,13 +184,13 @@ const QualificationSection = () => {
 
   const completeQualification = () => {
     setIsCompleting(true);
-    // Simulate API call
+    // Simuliere API-Aufruf
     setTimeout(() => {
       setIsComplete(true);
       setIsCompleting(false);
       toast({
-        title: "Qualification Complete!",
-        description: "Our team will review your information and reach out soon.",
+        title: "Qualifikation abgeschlossen!",
+        description: "Unser Team wird Ihre Informationen prüfen und sich in Kürze bei Ihnen melden.",
       });
     }, 1500);
   };
@@ -190,27 +201,46 @@ const QualificationSection = () => {
       ref={sectionRef}
       className="py-24 md:py-32 bg-gradient-to-b from-white to-beige-50 relative overflow-hidden"
     >
-      <div className="absolute inset-0 -z-10 opacity-30">
-        <div className="absolute right-0 bottom-0 w-96 h-96 bg-turquoise-100/30 rounded-full filter blur-3xl -translate-y-20 translate-x-20 opacity-60"></div>
-        <div className="absolute left-0 top-1/4 w-72 h-72 bg-beige-200/40 rounded-full filter blur-3xl -translate-x-20 opacity-60"></div>
+      <div className="absolute inset-0 -z-10 opacity-40">
+        <div 
+          className="absolute right-0 bottom-0 w-96 h-96 bg-turquoise-100/30 rounded-full filter blur-3xl -translate-y-20 translate-x-20 opacity-60 transition-transform duration-500"
+          style={{ transform: `translate(calc(-20px + ${mousePosition.x * 0.3}px), calc(20px + ${mousePosition.y * 0.3}px))` }}
+        />
+        <div 
+          className="absolute left-0 top-1/4 w-72 h-72 bg-beige-200/40 rounded-full filter blur-3xl -translate-x-20 opacity-60 transition-transform duration-500"
+          style={{ transform: `translate(calc(20px + ${mousePosition.x * -0.2}px), calc(0px + ${mousePosition.y * -0.2}px))` }}
+        />
+        
+        {/* Zusätzliche dynamische Elemente */}
+        <div 
+          className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-turquoise-200/30 rounded-full filter blur-2xl opacity-40 transition-transform duration-700"
+          style={{ transform: `translate(${mousePosition.x * 0.15}px, ${mousePosition.y * 0.15}px) rotate(${mousePosition.x * 0.05}deg)` }}
+        />
+        <div 
+          className="absolute top-1/2 left-1/3 w-48 h-48 bg-beige-300/25 rounded-full filter blur-xl opacity-50 transition-transform duration-700"
+          style={{ transform: `translate(${mousePosition.x * -0.1}px, ${mousePosition.y * -0.1}px) scale(${1 + Math.abs(mousePosition.y) * 0.003})` }}
+        />
       </div>
 
       <div className="max-container px-6 md:px-12">
         <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
           <span className="inline-block px-4 py-1.5 mb-6 rounded-full bg-turquoise-100 text-turquoise-800 font-medium text-sm">
-            Qualification Process
+            Qualifikationsprozess
           </span>
           <h2 className="text-3xl md:text-4xl font-semibold mb-6">
-            Are You <span className="text-gradient">Ready</span> For Social Success?
+            Sind Sie <span className="text-gradient">bereit</span> für Ihren sozialen Erfolg?
           </h2>
           <p className="text-muted-foreground text-lg">
-            Complete this short qualification process to help us understand if our services are the right fit for your career goals.
+            Füllen Sie diesen kurzen Qualifikationsprozess aus, damit wir verstehen können, ob unsere Dienstleistungen zu Ihren Karrierezielen passen.
           </p>
         </div>
 
         <div className="max-w-4xl mx-auto">
           {!isComplete ? (
-            <div className="bg-white rounded-xl shadow-subtle border border-beige-100 overflow-hidden animate-on-scroll">
+            <div 
+              className="bg-white rounded-xl shadow-subtle border border-beige-100 overflow-hidden animate-on-scroll transition-all duration-500 hover:shadow-lg transform-3d"
+              style={{ transform: `perspective(1000px) rotateX(${mousePosition.y * 0.01}deg) rotateY(${mousePosition.x * -0.01}deg)` }}
+            >
               {/* Progress Steps */}
               <div className="px-8 py-6 border-b border-beige-100 bg-beige-50/50">
                 <div className="flex items-center justify-between">
@@ -218,7 +248,7 @@ const QualificationSection = () => {
                     <div key={idx} className="flex items-center">
                       <div 
                         className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300",
+                          "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500",
                           idx < currentStep 
                             ? "bg-turquoise-500 text-white" 
                             : idx === currentStep 
@@ -227,9 +257,9 @@ const QualificationSection = () => {
                         )}
                       >
                         {idx < currentStep ? (
-                          <CheckCircle2 size={20} />
+                          <CheckCircle2 size={20} className="animate-pulse-subtle" />
                         ) : (
-                          <step.icon size={20} />
+                          <step.icon size={20} className={idx === currentStep ? "animate-pulse-subtle" : ""} />
                         )}
                       </div>
                       <div className={cn(
@@ -241,7 +271,7 @@ const QualificationSection = () => {
                       </div>
                       {idx < steps.length - 1 && (
                         <div className={cn(
-                          "hidden sm:block h-0.5 w-8 md:w-12 mx-2",
+                          "hidden sm:block h-0.5 w-8 md:w-12 mx-2 transition-all duration-700",
                           idx < currentStep ? "bg-turquoise-500" : "bg-beige-200"
                         )} />
                       )}
@@ -259,7 +289,7 @@ const QualificationSection = () => {
 
                 <div className="space-y-8">
                   {steps[currentStep].questions.map((q) => (
-                    <div key={q.id} className="animate-fade-in">
+                    <div key={q.id} className="animate-fade-in transition-all duration-500 hover:translate-x-1">
                       <Label htmlFor={q.id} className="mb-3 text-lg font-medium block">
                         {q.question}
                       </Label>
@@ -269,8 +299,8 @@ const QualificationSection = () => {
                           id={q.id}
                           value={answers[q.id] || ''}
                           onChange={(e) => handleInputChange(q.id, e.target.value)}
-                          className="input-focus-effect"
-                          placeholder="Your answer..."
+                          className="input-focus-effect transition-all duration-300 focus:shadow-md"
+                          placeholder="Ihre Antwort..."
                         />
                       ) : (
                         <RadioGroup 
@@ -279,11 +309,18 @@ const QualificationSection = () => {
                           className="grid sm:grid-cols-2 gap-3 mt-2"
                         >
                           {q.options?.map((option) => (
-                            <div key={option.value} className="flex items-start space-x-2">
-                              <RadioGroupItem id={`${q.id}-${option.value}`} value={option.value} />
+                            <div 
+                              key={option.value} 
+                              className="flex items-start space-x-2 transition-all duration-300 hover:translate-x-1"
+                            >
+                              <RadioGroupItem 
+                                id={`${q.id}-${option.value}`} 
+                                value={option.value} 
+                                className="transition-all duration-300 data-[state=checked]:scale-110"
+                              />
                               <Label 
                                 htmlFor={`${q.id}-${option.value}`}
-                                className="font-normal cursor-pointer"
+                                className="font-normal cursor-pointer transition-colors duration-300 hover:text-turquoise-700"
                               >
                                 {option.label}
                               </Label>
@@ -300,15 +337,18 @@ const QualificationSection = () => {
                     variant="outline"
                     onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
                     disabled={currentStep === 0}
-                    className="rounded-full border-turquoise-200 hover:border-turquoise-300"
+                    className="rounded-full border-turquoise-200 hover:border-turquoise-300 transition-all duration-300 hover:shadow-md"
                   >
-                    Back
+                    Zurück
                   </Button>
                   
                   <Button
                     onClick={handleNextStep}
                     disabled={!isStepComplete() || isCompleting}
-                    className="rounded-full bg-turquoise-500 hover:bg-turquoise-600 text-white button-hover-effect min-w-32"
+                    className={cn(
+                      "rounded-full bg-turquoise-500 hover:bg-turquoise-600 text-white button-hover-effect min-w-32 transition-all duration-500",
+                      isStepComplete() && !isCompleting ? "animate-pulse-subtle hover:scale-105 hover:shadow-xl" : ""
+                    )}
                   >
                     {isCompleting ? (
                       <div className="flex items-center">
@@ -316,15 +356,15 @@ const QualificationSection = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Processing...
+                        Verarbeitung...
                       </div>
                     ) : currentStep < steps.length - 1 ? (
                       <div className="flex items-center">
-                        Continue <ChevronRight className="ml-1 h-4 w-4" />
+                        Weiter <ChevronRight className="ml-1 h-4 w-4" />
                       </div>
                     ) : (
                       <div className="flex items-center">
-                        Submit <ChevronRight className="ml-1 h-4 w-4" />
+                        Absenden <ChevronRight className="ml-1 h-4 w-4" />
                       </div>
                     )}
                   </Button>
@@ -332,21 +372,22 @@ const QualificationSection = () => {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-subtle border border-beige-100 p-8 text-center animate-fade-in">
-              <div className="w-16 h-16 bg-turquoise-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-                <CheckCircle2 size={30} className="text-turquoise-600" />
+            <div className="bg-white rounded-xl shadow-subtle border border-beige-100 p-8 text-center animate-fade-in transition-all duration-500 hover:shadow-xl">
+              <div className="w-16 h-16 bg-turquoise-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce relative group">
+                <CheckCircle2 size={30} className="text-turquoise-600 transition-transform duration-300 group-hover:scale-110" />
+                <Sparkles size={16} className="absolute top-0 right-0 text-turquoise-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
-              <h3 className="text-2xl font-semibold mb-4">Thank You for Completing the Qualification Process!</h3>
+              <h3 className="text-2xl font-semibold mb-4">Vielen Dank für den Abschluss des Qualifikationsprozesses!</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Our team will review your information and get back to you within 24-48 hours to discuss how we can help elevate your personal brand.
+                Unser Team wird Ihre Informationen prüfen und sich innerhalb von 24-48 Stunden bei Ihnen melden, um zu besprechen, wie wir Ihre persönliche Marke verbessern können.
               </p>
               <Button 
                 onClick={() => {
                   document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="rounded-full bg-turquoise-500 hover:bg-turquoise-600 text-white button-hover-effect"
+                className="rounded-full bg-turquoise-500 hover:bg-turquoise-600 text-white button-hover-effect transition-all duration-300 hover:scale-105 hover:shadow-xl"
               >
-                Contact Us Directly <ArrowRight size={16} className="ml-2" />
+                Kontaktieren Sie uns direkt <ArrowRight size={16} className="ml-2" />
               </Button>
             </div>
           )}
