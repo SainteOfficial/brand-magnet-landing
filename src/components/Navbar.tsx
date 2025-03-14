@@ -27,8 +27,8 @@ const Navbar = () => {
     >
       <div className="max-container px-6 md:px-12 flex items-center justify-between">
         <div className="flex items-center">
-          <a href="#" className="text-xl font-serif font-medium text-foreground">
-            <span className="text-turquoise-600">Brand</span>Magnet
+          <a href="#" className="text-xl font-serif font-medium text-foreground" aria-label="SocialPartner Home">
+            <span className="text-turquoise-600">Social</span>Partner
           </a>
         </div>
 
@@ -107,6 +107,7 @@ const NavLinks = ({ mobile, setIsMobileMenuOpen }: NavLinksProps) => {
     { name: 'Services', href: '#services' },
     { name: 'Testimonials', href: '#testimonials' },
     { name: 'Contact', href: '#contact' },
+    { name: 'Qualification', href: '#qualification' }, 
   ];
 
   const handleClick = (href: string) => {
