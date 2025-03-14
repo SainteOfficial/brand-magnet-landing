@@ -5,6 +5,7 @@ import HeroSection from '@/components/HeroSection';
 import AboutSection from '@/components/AboutSection';
 import TestimonialSection from '@/components/TestimonialSection';
 import QualificationSection from '@/components/QualificationSection';
+import ServicesSection from '@/components/ServicesSection';
 import Footer from '@/components/Footer';
 import { Helmet } from 'react-helmet-async';
 
@@ -18,17 +19,31 @@ const Index = () => {
         const elementHeight = el.getBoundingClientRect().height;
         const windowHeight = window.innerHeight;
         
+        // Mehr fortgeschrittene Animation mit sanfterem Einblenden
         if (elementTop < windowHeight - elementHeight * 0.15) {
           el.classList.add('animated');
         }
       });
     };
 
+    // Interaktive Hintergrundanimation für Mausbewegung
+    const handleMouseMove = (e: MouseEvent) => {
+      const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+      const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+      
+      document.querySelectorAll('.parallax-bg').forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        htmlEl.style.transform = `translate(${moveX}px, ${moveY}px)`;
+      });
+    };
+
     handleScroll();
     window.addEventListener('scroll', handleScroll);
+    window.addEventListener('mousemove', handleMouseMove);
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
@@ -50,9 +65,18 @@ const Index = () => {
         <link rel="canonical" href="https://socialpartner.com" />
       </Helmet>
       
+      <div className="interactive-background fixed inset-0 -z-20 opacity-50">
+        <div className="parallax-bg absolute top-0 left-0 w-full h-full">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-turquoise-200/30 filter blur-[100px]"></div>
+          <div className="absolute bottom-1/4 right-1/3 w-72 h-72 rounded-full bg-beige-300/20 filter blur-[80px]"></div>
+          <div className="absolute top-1/2 right-1/4 w-64 h-64 rounded-full bg-turquoise-100/30 filter blur-[60px]"></div>
+        </div>
+      </div>
+      
       <Navbar />
       <HeroSection />
       <AboutSection />
+      <ServicesSection />
       <TestimonialSection />
       <QualificationSection />
       <Footer />

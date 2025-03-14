@@ -115,17 +115,67 @@
   .text-gradient {
     @apply bg-gradient-to-r from-turquoise-700 via-turquoise-600 to-turquoise-500 bg-clip-text text-transparent;
   }
-}
 
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
+  /* Interactive background styles */
+  .interactive-background {
+    z-index: -1;
+    pointer-events: none;
   }
-  40% {
-    transform: translateY(-10px);
+
+  .parallax-bg {
+    transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
-  60% {
-    transform: translateY(-5px);
+
+  /* 3D transform styles */
+  .transform-3d {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: transform 0.5s ease;
+  }
+
+  .rotate-hover {
+    transition: transform 0.5s ease;
+  }
+  
+  .rotate-hover:hover {
+    transform: rotateY(10deg) rotateX(5deg);
+  }
+
+  /* Enhanced floating animations */
+  .float-slow {
+    animation: float 10s infinite ease-in-out;
+  }
+
+  .float-medium {
+    animation: float 7s infinite ease-in-out;
+  }
+
+  .float-fast {
+    animation: float 4s infinite ease-in-out;
+  }
+
+  /* Glowing effect for buttons */
+  .glow-hover {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glow-hover::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .glow-hover:hover::after {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -141,7 +191,7 @@
   transform: translateY(0);
 }
 
-/* Button Animation */
+/* Enhanced Button Animation */
 .button-hover-effect {
   position: relative;
   overflow: hidden;
@@ -209,9 +259,9 @@
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0)
+    rgba(255,255,255,0),
+    rgba(255,255,255,0.2),
+    rgba(255,255,255,0)
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
@@ -231,6 +281,24 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Rotating animation */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-rotate {
+  animation: rotate 10s linear infinite;
+}
+
+.animate-rotate-slow {
+  animation: rotate 20s linear infinite;
 }
 
 /* Card hover effects */
@@ -279,4 +347,26 @@
 
 .button-3d:active {
   transform: perspective(1px) translateZ(5px);
+}
+
+/* Magnetic button effect */
+.magnetic-button {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: perspective(500px);
+  transition: transform 0.1s;
+}
+
+/* Enhanced gradients for backgrounds */
+.gradient-bg-1 {
+  background: linear-gradient(135deg, rgba(232, 245, 245, 0.8) 0%, rgba(226, 245, 241, 0.8) 100%);
+}
+
+.gradient-bg-2 {
+  background: linear-gradient(135deg, rgba(242, 240, 230, 0.9) 0%, rgba(240, 237, 226, 0.9) 100%);
+}
+
+/* Mouse parallax effect */
+.parallax-element {
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }

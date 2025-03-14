@@ -1,14 +1,33 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Sparkles } from 'lucide-react';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
+      
+      // Aktiven Menüpunkt basierend auf Scroll-Position aktualisieren
+      const sections = ['about', 'services', 'testimonials', 'qualification'];
+      let currentSection = '';
+      
+      sections.forEach(section => {
+        const element = document.getElementById(section);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= 200 && rect.bottom >= 200) {
+            currentSection = section;
+          }
+        }
+      });
+      
+      setActiveSection(currentSection);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -26,16 +45,30 @@ const Navbar = () => {
     >
       <div className="max-container px-6 md:px-12 flex items-center justify-between">
         <div className="flex items-center">
-          <a href="#" className="text-xl font-serif font-medium text-foreground" aria-label="SocialPartner Home">
-            <span className="text-turquoise-600">Social</span>Partner
+          <a href="#" className="text-xl font-serif font-medium text-foreground relative group" aria-label="SocialPartner Home">
+            <span className="text-turquoise-600 relative">
+              Social
+              <span className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <Sparkles size={12} className="text-turquoise-400" />
+              </span>
+            </span>
+            <span>Partner</span>
+            <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-turquoise-500 group-hover:w-full transition-all duration-300"></div>
           </a>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <NavLinks />
-          <Button className="rounded-full bg-turquoise-500 hover:bg-turquoise-600 text-white button-hover-effect">
-            Get Started
+          <NavLinks activeSection={activeSection} />
+          <Button 
+            className="rounded-full bg-turquoise-500 hover:bg-turquoise-600 text-white button-hover-effect group relative overflow-hidden"
+            onClick={() => document.querySelector('#qualification')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            <span className="relative z-[1] flex items-center">
+              Starten Sie jetzt 
+              <Sparkles className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-turquoise-600 to-turquoise-400 transform translate-y-full transition-transform duration-300 group-hover:translate-y-0" />
           </Button>
         </nav>
 
@@ -43,7 +76,7 @@ const Navbar = () => {
         <button 
           className="md:hidden text-foreground" 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle menu"
+          aria-label="Menü öffnen/schließen"
         >
           <svg 
             width="24" 
@@ -85,9 +118,15 @@ const Navbar = () => {
         )}
       >
         <div className="p-6 flex flex-col space-y-6">
-          <NavLinks mobile setIsMobileMenuOpen={setIsMobileMenuOpen} />
-          <Button className="w-full rounded-full bg-turquoise-500 hover:bg-turquoise-600 text-white">
-            Get Started
+          <NavLinks mobile setIsMobileMenuOpen={setIsMobileMenuOpen} activeSection={activeSection} />
+          <Button 
+            className="w-full rounded-full bg-turquoise-500 hover:bg-turquoise-600 text-white"
+            onClick={() => {
+              document.querySelector('#qualification')?.scrollIntoView({ behavior: 'smooth' });
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            Starten Sie jetzt
           </Button>
         </div>
       </div>
@@ -98,9 +137,10 @@ const Navbar = () => {
 interface NavLinksProps {
   mobile?: boolean;
   setIsMobileMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  activeSection: string;
 }
 
-const NavLinks = ({ mobile, setIsMobileMenuOpen }: NavLinksProps) => {
+const NavLinks = ({ mobile, setIsMobileMenuOpen, activeSection }: NavLinksProps) => {
   const navItems = [
     { name: 'Über uns', href: '#about' },
     { name: 'Leistungen', href: '#services' },
@@ -117,23 +157,33 @@ const NavLinks = ({ mobile, setIsMobileMenuOpen }: NavLinksProps) => {
 
   return (
     <>
-      {navItems.map((item) => (
-        <a 
-          key={item.name}
-          href={item.href}
-          onClick={(e) => {
-            e.preventDefault();
-            handleClick(item.href);
-          }}
-          className={cn(
-            "relative text-foreground hover:text-turquoise-700 transition-colors duration-300",
-            mobile ? "block py-2 text-lg" : "font-medium",
-            "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-turquoise-500 after:transition-all after:duration-300 hover:after:w-full"
-          )}
-        >
-          {item.name}
-        </a>
-      ))}
+      {navItems.map((item) => {
+        const isActive = activeSection === item.href.substring(1);
+        return (
+          <a 
+            key={item.name}
+            href={item.href}
+            onClick={(e) => {
+              e.preventDefault();
+              handleClick(item.href);
+            }}
+            className={cn(
+              "relative text-foreground hover:text-turquoise-700 transition-colors duration-300",
+              mobile ? "block py-2 text-lg" : "font-medium",
+              isActive ? "text-turquoise-600" : "",
+              "after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-turquoise-500 after:transition-all after:duration-300",
+              isActive ? "after:w-full" : "after:w-0 hover:after:w-full"
+            )}
+          >
+            {item.name}
+            {isActive && !mobile && (
+              <span className="absolute -right-2 -top-1">
+                <Sparkles size={10} className="text-turquoise-400" />
+              </span>
+            )}
+          </a>
+        );
+      })}
     </>
   );
 };
