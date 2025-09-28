@@ -5,7 +5,6 @@ if not success then
     return
 end
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
@@ -14,55 +13,8 @@ if not player then
     return
 end
 
--- GUI erstellen (falls Executor dies unterstützt)
-local playerGui = player:FindFirstChild("PlayerGui")
-if not playerGui then
-    print("Warnung: PlayerGui nicht gefunden. GUI wird übersprungen.")
-else
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "ComboGui"
-    screenGui.Parent = playerGui
-
-    local toggleButton = Instance.new("TextButton")
-    toggleButton.Size = UDim2.new(0, 100, 0, 50)
-    toggleButton.Position = UDim2.new(1, -110, 0, 10) -- Oben rechts
-    toggleButton.Text = "Combo: OFF"
-    toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggleButton.Parent = screenGui
-
-    -- Drag-Logik
-    local dragging
-    local dragStart
-    local startPos
-    toggleButton.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = toggleButton.Position
-        end
-    end)
-    toggleButton.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - dragStart
-            toggleButton.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
-            )
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-end
-
 -- Variablen für den Loop
 local isComboRunning = false
-local comboConnection
 
 -- Byte-Sequenzen und genaue Zeitdifferenzen
 local comboSteps = {
@@ -147,25 +99,15 @@ local function runComboLoop()
     end
 end
 
--- Toggle-Button-Logik
-if toggleButton then
-    toggleButton.MouseButton1Click:Connect(function()
+-- Tastenkombination zum Ein-/Ausschalten (z. B. F9)
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F9 then
         isComboRunning = not isComboRunning
         if isComboRunning then
-            toggleButton.Text = "Combo: ON"
-            toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-            print("[Combo Loop] Gestartet")
-            comboConnection = RunService.Heartbeat:Connect(function()
-                if not isComboRunning then
-                    comboConnection:Disconnect()
-                    print("[Combo Loop] Gestoppt")
-                else
-                    runComboLoop()
-                end
-            end)
+            print("[Combo Loop] Gestartet mit F9")
+            spawn(runComboLoop) -- Verwende spawn für asynchronen Loop
         else
-            toggleButton.Text = "Combo: OFF"
-            toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+            print("[Combo Loop] Gestoppt mit F9")
         end
-    end)
-end
+    end
+end)
