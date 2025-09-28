@@ -1,113 +1,174 @@
--- Sicherheitsprüfung für Executor
-local success, ReplicatedStorage = pcall(game.GetService, game, "ReplicatedStorage")
-if not success then
-    print("Fehler: ReplicatedStorage nicht gefunden. Skript wird abgebrochen.")
-    return
-end
+-- SafeComboTester.lua (LocalScript)
+-- Ziel: komplett clientseitig debuggen / simulieren, kein FireServer-Aufruf!
+-- Leg dieses Script in StarterPlayerScripts und teste in deinem eigenen Place.
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
+
+-- Warte auf LocalPlayer (falls Script sehr früh startet)
 if not player then
-    print("Fehler: Kein LocalPlayer gefunden. Skript wird abgebrochen.")
-    return
+    repeat
+        task.wait(0.05)
+        player = Players.LocalPlayer
+    until player
 end
 
--- Variablen für den Loop
-local isComboRunning = false
+-- Konfiguration
+local TOGGLE_KEY = Enum.KeyCode.F9
+local SIMULATE_REMOTE = true -- true = nur Logging, false = ERLAUBT nur wenn du das in deinem eigenen Test-Place aktivieren willst
+local REMOTE_NAME = "ByteNetReliable"
+local LOOP_VARIATION = 0 -- falls >0, zufallsvariation in Sekunden z.B. 0.05
 
--- Byte-Sequenzen und genaue Zeitdifferenzen
+-- Helper: Byte-Puffer erzeugen (benutzen wir statt nicht-standard buffer.fromstring)
+local function makeBuffer(luaString)
+    -- Lua-String als Rohbytes; wir behandeln es als Byte-Array
+    return tostring(luaString or "")
+end
+
+local function bufferLen(buf)
+    return #buf
+end
+
+local function bufferReadU8(buf, index) -- index 0-based to match original style
+    -- Lua string indexing is 1-based
+    local pos = index + 1
+    if pos < 1 or pos > #buf then return nil end
+    return string.byte(buf, pos)
+end
+
+local function bufferToHex(buf)
+    if not buf then return "<nil>" end
+    local hex = {}
+    for i = 0, bufferLen(buf) - 1 do
+        local b = bufferReadU8(buf, i) or 0
+        hex[#hex + 1] = string.format("%02X", b)
+    end
+    return table.concat(hex, " ")
+end
+
+-- Combo-Definition (entspricht deinem Original)
 local comboSteps = {
-    {buffer = buffer.fromstring("\t\006\001"), delay = 0.764716},
-    {buffer = buffer.fromstring("\t\004\001"), delay = 0.681338},
-    {buffer = buffer.fromstring("\t\a\001"), delay = 0.781132},
-    {buffer = buffer.fromstring("\t\t\001"), delay = 0.74} -- Delay für Loop-Wiederholung
+    { buffer = makeBuffer("\t\006\001"), delay = 0.764716 },
+    { buffer = makeBuffer("\t\004\001"), delay = 0.681338 },
+    { buffer = makeBuffer("\t\a\001"), delay = 0.781132 },
+    { buffer = makeBuffer("\t\t\001"), delay = 0.74 } -- End-Delay / Loop-Delay
 }
 
--- Debugging-Funktion: Spielerstatus erfassen
+-- Laufkontrolle
+local isComboRunning = false
+local comboThread = nil
+
+-- Hol Player-Kontext zum Zeitpunkt des Sendens (nur lesend, clientseitig)
 local function getPlayerContext()
     local context = {}
     local character = player.Character
     if character then
         local humanoid = character:FindFirstChildOfClass("Humanoid")
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        context.position = rootPart and rootPart.Position or Vector3.new(0, 0, 0)
+        local root = character:FindFirstChild("HumanoidRootPart")
+        context.position = root and root.Position or Vector3.new(0,0,0)
         context.animationState = humanoid and tostring(humanoid:GetState()) or "N/A"
         context.health = humanoid and humanoid.Health or "N/A"
     else
-        context.position = Vector3.new(0, 0, 0)
-        context.animationState = "No Humanoid"
+        context.position = Vector3.new(0,0,0)
+        context.animationState = "No Character"
         context.health = "N/A"
     end
 
     local mouse = player:GetMouse()
-    local target = mouse.Target
+    local target = mouse and mouse.Target
     context.mouseTarget = target and target:GetFullName() or "No Target"
-    context.targetInstance = target -- Für mögliche inst-Argumente
-
+    context.targetInstance = target
     return context
 end
 
--- Debugging-Funktion: Buffer-Inhalt als Hex-String
-local function bufferToHex(buffer)
-    local hex = ""
-    for i = 0, buffer.len(buffer) - 1 do
-        hex = hex .. string.format("%02X ", buffer.readu8(buffer, i))
-    end
-    return hex
+-- Simulierter "FireServer" (nur Logging!). Hier siehst du genau, was gesendet würde.
+local function simulatedFireServer(buffer, timestamp, context)
+    print("----- [SIMULATED FIRE] -----")
+    print("Timestamp:", string.format("%.6f", timestamp))
+    print("Buffer hex:", bufferToHex(buffer))
+    print("Player position:", tostring(context.position))
+    print("AnimState:", context.animationState, "Health:", tostring(context.health))
+    print("Mouse target:", context.mouseTarget)
+    print("----------------------------")
 end
 
--- Funktion, um einen Combo-Schritt auszuführen
+-- Robust-Ausführung eines Combo-Schrittes
 local function fireComboStep(buffer, timestamp, context)
-    local args = {
-        buffer,
-        {timestamp, context.position, context.targetInstance} -- vec3 und inst hinzufügen
-    }
-    print(string.format(
-        "[Combo Step] Zeitstempel: %.6f, Buffer: %s, Position: %s, Animation: %s, Gesundheit: %s, Ziel: %s",
-        timestamp,
-        bufferToHex(buffer),
-        tostring(context.position),
-        context.animationState,
-        context.health,
-        context.mouseTarget
-    ))
-    local success, err = pcall(function()
-        ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
-    end)
-    if not success then
-        print("[Fehler] FireServer fehlgeschlagen: ", err)
+    -- Hier nur Simulation / Logging für Sicherheit.
+    if SIMULATE_REMOTE then
+        simulatedFireServer(buffer, timestamp, context)
+    else
+        -- Optionaler echter FireServer-Pfad: aktiviert nur, wenn du das in einem eigenen Test-Place möchtest
+        local remote = ReplicatedStorage:FindFirstChild(REMOTE_NAME)
+        if remote and remote:IsA("RemoteEvent") then
+            local success, err = pcall(function()
+                -- ACHTUNG: dieser Aufruf führt echtes Netzwerk aus. Nur in eigenem Test-Place aktivieren.
+                remote:FireServer(buffer, {timestamp, context.position, context.targetInstance})
+            end)
+            if not success then
+                warn("[ERROR] FireServer fehlgeschlagen:", err)
+            else
+                print("[INFO] FireServer erfolgreich (simuliert deaktiviert).")
+            end
+        else
+            warn("[WARN] Remote nicht gefunden oder kein RemoteEvent:", REMOTE_NAME)
+            simulatedFireServer(buffer, timestamp, context)
+        end
     end
 end
 
--- Combo-Loop
+-- Combo-Loop (task.spawn für Zuverlässigkeit)
 local function runComboLoop()
     while isComboRunning do
         local startTime = tick()
         local cumulativeDelay = 0
-        print("[Combo Start] Startzeit: ", startTime)
+        print("[Combo Start] Startzeit:", startTime)
         for i, step in ipairs(comboSteps) do
             if not isComboRunning then break end
             local relativeTime = startTime + cumulativeDelay
-            local context = getPlayerContext()
-            fireComboStep(step.buffer, relativeTime, context)
-            local delay = step.delay -- * (1 + math.random(-0.05, 0.05)) -- Optional: Zufallsvariation
+            local ctx = getPlayerContext()
+            fireComboStep(step.buffer, relativeTime, ctx)
+            local var = LOOP_VARIATION
+            local delay = step.delay * (1 + (var > 0 and (math.random() * 2 * var - var) or 0))
             cumulativeDelay = cumulativeDelay + delay
             task.wait(delay)
         end
-        print("[Combo Ende] Dauer: ", tick() - startTime)
+        print("[Combo Ende] Schleifendauer: ", string.format("%.3f", tick() - startTime))
+        -- Du kannst hier eine kurze Pause einbauen, wenn gewünscht:
+        -- task.wait(0.05)
     end
 end
 
--- Tastenkombination zum Ein-/Ausschalten (z. B. F9)
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.F9 then
+-- Fokus-Check (verhindert Hotkey, wenn TextBox aktiv ist)
+local function isTyping()
+    local focused = UserInputService:GetFocusedTextBox()
+    return focused ~= nil and focused ~= ""
+end
+
+-- Input-Handler (F9 Toggle)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    -- gameProcessed==true bedeutet GUI/Textbox hat es abgefangen
+    if isTyping() then
+        -- Ausgabe nur wenn du trotzdem testen willst
+        print("[INPUT] TextBox hat Fokus, Hotkey ignoriert.")
+        return
+    end
+
+    if input.KeyCode == TOGGLE_KEY then
         isComboRunning = not isComboRunning
         if isComboRunning then
-            print("[Combo Loop] Gestartet mit F9")
-            spawn(runComboLoop) -- Verwende spawn für asynchronen Loop
+            print("[INPUT] Combo gestartet via", tostring(TOGGLE_KEY))
+            comboThread = task.spawn(runComboLoop)
         else
-            print("[Combo Loop] Gestoppt mit F9")
+            print("[INPUT] Combo gestoppt via", tostring(TOGGLE_KEY))
         end
     end
 end)
+
+-- Kurzer Selbsttest beim Start (nur Logging)
+print("[SafeComboTester] Initialisiert. Toggle mit", tostring(TOGGLE_KEY))
+print("[SafeComboTester] SIMULATE_REMOTE =", tostring(SIMULATE_REMOTE))
