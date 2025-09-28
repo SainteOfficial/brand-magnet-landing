@@ -1,0 +1,171 @@
+-- Sicherheitsprüfung für Executor
+local success, ReplicatedStorage = pcall(game.GetService, game, "ReplicatedStorage")
+if not success then
+    print("Fehler: ReplicatedStorage nicht gefunden. Skript wird abgebrochen.")
+    return
+end
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+if not player then
+    print("Fehler: Kein LocalPlayer gefunden. Skript wird abgebrochen.")
+    return
+end
+
+-- GUI erstellen (falls Executor dies unterstützt)
+local playerGui = player:FindFirstChild("PlayerGui")
+if not playerGui then
+    print("Warnung: PlayerGui nicht gefunden. GUI wird übersprungen.")
+else
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ComboGui"
+    screenGui.Parent = playerGui
+
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0, 100, 0, 50)
+    toggleButton.Position = UDim2.new(1, -110, 0, 10) -- Oben rechts
+    toggleButton.Text = "Combo: OFF"
+    toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleButton.Parent = screenGui
+
+    -- Drag-Logik
+    local dragging
+    local dragStart
+    local startPos
+    toggleButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = toggleButton.Position
+        end
+    end)
+    toggleButton.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            toggleButton.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+end
+
+-- Variablen für den Loop
+local isComboRunning = false
+local comboConnection
+
+-- Byte-Sequenzen und genaue Zeitdifferenzen
+local comboSteps = {
+    {buffer = buffer.fromstring("\t\006\001"), delay = 0.764716},
+    {buffer = buffer.fromstring("\t\004\001"), delay = 0.681338},
+    {buffer = buffer.fromstring("\t\a\001"), delay = 0.781132},
+    {buffer = buffer.fromstring("\t\t\001"), delay = 0.74} -- Delay für Loop-Wiederholung
+}
+
+-- Debugging-Funktion: Spielerstatus erfassen
+local function getPlayerContext()
+    local context = {}
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        context.position = rootPart and rootPart.Position or Vector3.new(0, 0, 0)
+        context.animationState = humanoid and tostring(humanoid:GetState()) or "N/A"
+        context.health = humanoid and humanoid.Health or "N/A"
+    else
+        context.position = Vector3.new(0, 0, 0)
+        context.animationState = "No Humanoid"
+        context.health = "N/A"
+    end
+
+    local mouse = player:GetMouse()
+    local target = mouse.Target
+    context.mouseTarget = target and target:GetFullName() or "No Target"
+    context.targetInstance = target -- Für mögliche inst-Argumente
+
+    return context
+end
+
+-- Debugging-Funktion: Buffer-Inhalt als Hex-String
+local function bufferToHex(buffer)
+    local hex = ""
+    for i = 0, buffer.len(buffer) - 1 do
+        hex = hex .. string.format("%02X ", buffer.readu8(buffer, i))
+    end
+    return hex
+end
+
+-- Funktion, um einen Combo-Schritt auszuführen
+local function fireComboStep(buffer, timestamp, context)
+    local args = {
+        buffer,
+        {timestamp, context.position, context.targetInstance} -- vec3 und inst hinzufügen
+    }
+    print(string.format(
+        "[Combo Step] Zeitstempel: %.6f, Buffer: %s, Position: %s, Animation: %s, Gesundheit: %s, Ziel: %s",
+        timestamp,
+        bufferToHex(buffer),
+        tostring(context.position),
+        context.animationState,
+        context.health,
+        context.mouseTarget
+    ))
+    local success, err = pcall(function()
+        ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+    end)
+    if not success then
+        print("[Fehler] FireServer fehlgeschlagen: ", err)
+    end
+end
+
+-- Combo-Loop
+local function runComboLoop()
+    while isComboRunning do
+        local startTime = tick()
+        local cumulativeDelay = 0
+        print("[Combo Start] Startzeit: ", startTime)
+        for i, step in ipairs(comboSteps) do
+            if not isComboRunning then break end
+            local relativeTime = startTime + cumulativeDelay
+            local context = getPlayerContext()
+            fireComboStep(step.buffer, relativeTime, context)
+            local delay = step.delay -- * (1 + math.random(-0.05, 0.05)) -- Optional: Zufallsvariation
+            cumulativeDelay = cumulativeDelay + delay
+            task.wait(delay)
+        end
+        print("[Combo Ende] Dauer: ", tick() - startTime)
+    end
+end
+
+-- Toggle-Button-Logik
+if toggleButton then
+    toggleButton.MouseButton1Click:Connect(function()
+        isComboRunning = not isComboRunning
+        if isComboRunning then
+            toggleButton.Text = "Combo: ON"
+            toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            print("[Combo Loop] Gestartet")
+            comboConnection = RunService.Heartbeat:Connect(function()
+                if not isComboRunning then
+                    comboConnection:Disconnect()
+                    print("[Combo Loop] Gestoppt")
+                else
+                    runComboLoop()
+                end
+            end)
+        else
+            toggleButton.Text = "Combo: OFF"
+            toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        end
+    end)
+end
